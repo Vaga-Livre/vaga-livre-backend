@@ -1,0 +1,14 @@
+ALTER TABLE park
+    ALTER COLUMN contact_info SET NOT NULL;
+
+ALTER TABLE park
+    ALTER COLUMN description SET NOT NULL;
+
+ALTER TABLE park
+    ALTER COLUMN end_date_time SET NOT NULL;
+
+ALTER TABLE park
+    ALTER COLUMN name SET NOT NULL;
+
+ALTER TABLE park
+    ALTER COLUMN start_time SET NOT NULL;

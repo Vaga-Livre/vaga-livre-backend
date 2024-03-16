@@ -2,48 +2,62 @@ package br.com.backend.vagalivre.parking.domain.services;
 
 import br.com.backend.vagalivre.parking.domain.entities.Park;
 import br.com.backend.vagalivre.parking.domain.entities.ParkSpace;
-import br.com.backend.vagalivre.parking.domain.repositories.ParkRepository;
 import br.com.backend.vagalivre.parking.domain.repositories.ParkSpaceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ParkSpaceService {
 
     private final ParkSpaceRepository parkSpaceRepository;
-    private final ParkRepository parkRepository;
+    private final ParkService parkService;
 
     @Autowired
     public ParkSpaceService(
             ParkSpaceRepository parkSpaceRepository,
-            ParkRepository parkRepository
+            ParkService parkService
     ){
         this.parkSpaceRepository = parkSpaceRepository;
-        this.parkRepository = parkRepository;
+        this.parkService = parkService;
     }
 
-    public List<ParkSpace> getAllParkSpacesInPark(Park park) {
+    public List<ParkSpace> getAllParkSpacesInPark(Integer parkId) {
+        Park park = parkService.getParkOrNull(parkId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND ,"Park with ID " + parkId + " not found")
+        );
+
         return parkSpaceRepository.findParkSpaceByPark(park);
     }
 
     public ParkSpace createNewParkSpace(Integer parkId) {
-        Park park = parkRepository.getReferenceById(parkId);
+        Park park = parkService.getParkOrNull(parkId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.BAD_REQUEST, "Park with ID " + parkId + " not found")
+        );
 
         ParkSpace parkSpace = new ParkSpace(null, null, Collections.emptyList(), park);
 
-        try {
-            return parkSpaceRepository.save(parkSpace);
-        } catch (DataAccessException e) {
-            throw new RuntimeException("Failed to add a parking space", e);
-        }
+        return parkSpaceRepository.save(parkSpace);
     }
 
-    public void removeParkSpace(Integer parkId){
-        ParkSpace parkSpace =  parkSpaceRepository.getReferenceById(parkId);
+    public void removeParkSpace(Integer parkSpaceId, Integer parkId){
+        Park park = parkService.getParkOrNull(parkId).orElseThrow(()->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Park with Id" + parkId + "not found")
+        );
+
+        ParkSpace parkSpace =  getParkSpaceOrNull(parkSpaceId).orElseThrow(()->
+                new ResponseStatusException(HttpStatus.NOT_FOUND ,"Park Space with ID " + parkSpaceId + " not found")
+        );
+
         parkSpaceRepository.delete(parkSpace);
+    }
+
+    public Optional<ParkSpace> getParkSpaceOrNull(Integer parkSpaceId){
+        return parkSpaceRepository.findById(parkSpaceId);
     }
 }
